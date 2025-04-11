@@ -1,23 +1,18 @@
 "use client";
-
 import { useEffect } from "react";
-
 export default function PhaserGame() {
   useEffect(() => {
     const loadGame = async () => {
       if (typeof window !== "undefined") {
         const Phaser = await import("phaser");
-
         class MyGameScene extends Phaser.Scene {
           player!: Phaser.Physics.Arcade.Sprite;
           platforms!: Phaser.Physics.Arcade.StaticGroup;
           cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
           spaceKey!: Phaser.Input.Keyboard.Key;
-
           constructor() {
             super("my-game");
           }
-
           preload() {
             this.load.image("sky", "/assets/sky.jpg");
             this.load.image("ground", "/assets/platform.png");
@@ -46,8 +41,8 @@ export default function PhaserGame() {
             this.physics.add.collider(this.player, this.platforms);
 
             // Setup input
-            this.cursors = this.input.keyboard.createCursorKeys();
-            this.spaceKey = this.input.keyboard.addKey(
+            this.cursors = this.input.keyboard!.createCursorKeys();
+            this.spaceKey = this.input.keyboard!.addKey(
               Phaser.Input.Keyboard.KeyCodes.SPACE,
             );
           }
@@ -64,7 +59,7 @@ export default function PhaserGame() {
             const isJumpPressed =
               this.cursors.up?.isDown || this.spaceKey.isDown;
 
-            if (isJumpPressed && this.player.body.touching.down) {
+            if (isJumpPressed && this.player.body?.touching.down) {
               this.player.setVelocityY(-300);
             }
           }
@@ -77,7 +72,7 @@ export default function PhaserGame() {
           physics: {
             default: "arcade",
             arcade: {
-              gravity: { y: 500 },
+              gravity: { x: 0, y: 500 },
               debug: false,
             },
           },
