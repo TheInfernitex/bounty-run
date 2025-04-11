@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Bounty Run",
-  description: "Vibe coded game in 15 minutes",
+  description: "The most therapeutic game you'll ever get to play...",
   icons: {
     icon: "/assets/star.png", // 👈 This sets your favicon
   },
