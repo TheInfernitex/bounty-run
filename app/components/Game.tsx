@@ -11,6 +11,8 @@ export default function PhaserGame() {
         class MyGameScene extends Phaser.Scene {
           player!: Phaser.Physics.Arcade.Sprite;
           platforms!: Phaser.Physics.Arcade.StaticGroup;
+          cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+          spaceKey!: Phaser.Input.Keyboard.Key;
 
           constructor() {
             super("my-game");
@@ -29,32 +31,41 @@ export default function PhaserGame() {
               .image(width / 2, height / 2, "sky")
               .setDisplaySize(width, height);
 
+            // Add ground platform at the bottom
             this.platforms = this.physics.add.staticGroup();
-            this.platforms
-              .create(width / 2, height - 32, "ground")
-              .setScale(2)
+            const ground = this.platforms
+              .create(width / 2, height - 16, "ground")
+              .setScale(width / 400, 1) // adjust width scale dynamically
               .refreshBody();
 
+            // Add player
             this.player = this.physics.add.sprite(100, height - 150, "dude");
             this.player.setBounce(0.2);
             this.player.setCollideWorldBounds(true);
 
             this.physics.add.collider(this.player, this.platforms);
+
+            // Setup input
+            this.cursors = this.input.keyboard.createCursorKeys();
+            this.spaceKey = this.input.keyboard.addKey(
+              Phaser.Input.Keyboard.KeyCodes.SPACE,
+            );
           }
 
           update() {
-            const cursors = this.input.keyboard.createCursorKeys();
-
-            if (cursors.left?.isDown) {
+            if (this.cursors.left?.isDown) {
               this.player.setVelocityX(-160);
-            } else if (cursors.right?.isDown) {
+            } else if (this.cursors.right?.isDown) {
               this.player.setVelocityX(160);
             } else {
               this.player.setVelocityX(0);
             }
 
-            if (cursors.up?.isDown && this.player.body.touching.down) {
-              this.player.setVelocityY(-330);
+            const isJumpPressed =
+              this.cursors.up?.isDown || this.spaceKey.isDown;
+
+            if (isJumpPressed && this.player.body.touching.down) {
+              this.player.setVelocityY(-300);
             }
           }
         }
@@ -66,7 +77,7 @@ export default function PhaserGame() {
           physics: {
             default: "arcade",
             arcade: {
-              gravity: { y: 300 },
+              gravity: { y: 500 },
               debug: false,
             },
           },
