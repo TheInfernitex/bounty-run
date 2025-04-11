@@ -190,8 +190,17 @@ export default function PhaserGame() {
 
             const { width, height } = this.scale;
             this.add
-              .text(width / 2, height / 2, "💥 Game Over 💥", {
+              .text(width / 2, height / 2 - 50, "💥 Game Over 💥", {
                 fontSize: "48px",
+                color: "#ff0000",
+                fontFamily: "Arial",
+              })
+              .setOrigin(0.5)
+              .setScrollFactor(0);
+
+            this.add
+              .text(width / 2, height / 2, `Score: ${this.score}`, {
+                fontSize: "35px",
                 color: "#ff0000",
                 fontFamily: "Arial",
               })
