@@ -79,7 +79,7 @@ export default function PhaserGame() {
 
             // Drop stars repeatedly
             this.time.addEvent({
-              delay: 1200,
+              delay: 1600,
               loop: true,
               callback: this.spawnStar,
               callbackScope: this,
@@ -245,7 +245,7 @@ export default function PhaserGame() {
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump = this.controls.up?.isDown || this.jumpKey.isDown;
 
-            const speed = 500; // faster side movement
+            const speed = 450; // faster side movement
             const jumpSpeed = -500; // slightly stronger jump
 
             if (moveLeft) {
