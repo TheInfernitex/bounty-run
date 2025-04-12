@@ -48,6 +48,7 @@ export default function PhaserGame() {
 
             // Summon the hero
             this.hero = this.physics.add.sprite(100, height - 150, "hero");
+            this.hero.setDragX(800); // smoother horizontal stop
             this.hero.setScale(1.5);
             this.hero.body?.updateFromGameObject();
             this.hero.setBounce(0.2);
@@ -139,12 +140,12 @@ export default function PhaserGame() {
               this.scoreText.setText("Score: " + this.score);
             });
 
-            // Fade out and destroy after 3 seconds
+            // Fade out and destroy after 4 seconds
             this.tweens.add({
               targets: star,
               alpha: 0,
-              duration: 3000,
-              delay: 3000,
+              duration: 4000,
+              delay: 4000,
               onComplete: () => {
                 if (star.active) {
                   star.destroy();
@@ -231,20 +232,23 @@ export default function PhaserGame() {
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump = this.controls.up?.isDown || this.jumpKey.isDown;
 
+            const speed = 400; // faster side movement
+            const jumpSpeed = -550; // slightly stronger jump
+
             if (moveLeft) {
-              this.hero.setVelocityX(-300);
+              this.hero.setVelocityX(-speed);
             } else if (moveRight) {
-              this.hero.setVelocityX(300);
+              this.hero.setVelocityX(speed);
             } else {
+              // Smooth deceleration
               this.hero.setVelocityX(0);
             }
 
             if (wantsToJump && isGrounded) {
-              this.hero.setVelocityY(-500);
+              this.hero.setVelocityY(jumpSpeed);
             }
           }
         }
-
         const config: Phaser.Types.Core.GameConfig = {
           type: Phaser.AUTO,
           width: window.innerWidth,
