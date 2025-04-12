@@ -79,7 +79,7 @@ export default function PhaserGame() {
 
             // Drop stars repeatedly
             this.time.addEvent({
-              delay: 800,
+              delay: 1200,
               loop: true,
               callback: this.spawnStar,
               callbackScope: this,
@@ -114,7 +114,7 @@ export default function PhaserGame() {
 
             // Drop bombs randomly
             this.time.addEvent({
-              delay: 3000,
+              delay: 4000,
               loop: true,
               callback: this.spawnBomb,
               callbackScope: this,
