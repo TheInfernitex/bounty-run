@@ -38,21 +38,34 @@ export default function PhaserGame() {
             this.add
               .image(width / 2, height / 2, "sky")
               .setDisplaySize(width, height);
-
             // Lay the foundation
             this.terrain = this.physics.add.staticGroup();
-            this.terrain
-              .create(width / 2, height - 16, "ground")
-              .setScale(width / 400, 1)
-              .refreshBody();
+            const platform = this.terrain
+              .create(width / 2, height, "ground") // bottom center
+              .setOrigin(0.5, 1);
+
+            const platformWidth = platform.width;
+            const platformHeight = platform.height;
+
+            const scaleX = width / platformWidth;
+            const desiredHeight = 100; // height of the "land"
+            const scaleY = desiredHeight / platformHeight;
+
+            platform.setScale(scaleX, scaleY).refreshBody();
 
             // Summon the hero
-            this.hero = this.physics.add.sprite(100, height - 150, "hero");
-            this.hero.setDragX(800); // smoother horizontal stop
-            this.hero.setScale(1.5);
-            this.hero.body?.updateFromGameObject();
+            const platformTopY = height - desiredHeight; // top of the platform
+            this.hero = this.physics.add.sprite(
+              100,
+              platformTopY - 100,
+              "hero",
+            ); // hero sits on top
+            this.hero.setScale(0.05);
             this.hero.setBounce(0.2);
             this.hero.setCollideWorldBounds(true);
+            this.hero.setDragX(800); // smoother stop
+            this.hero.body?.updateFromGameObject();
+
             this.physics.add.collider(this.hero, this.terrain);
 
             // Prepare for control
@@ -191,9 +204,9 @@ export default function PhaserGame() {
 
             const { width, height } = this.scale;
             this.add
-              .text(width / 2, height / 2 - 50, "💥 Game Over 💥", {
+              .text(width / 2, height / 2 - 50, "~ Game Over ~", {
                 fontSize: "48px",
-                color: "#ff0000",
+                color: "#ff000",
                 fontFamily: "Arial",
               })
               .setOrigin(0.5)
@@ -202,7 +215,7 @@ export default function PhaserGame() {
             this.add
               .text(width / 2, height / 2, `Score: ${this.score}`, {
                 fontSize: "35px",
-                color: "#ff0000",
+                color: "#ff000",
                 fontFamily: "Arial",
               })
               .setOrigin(0.5)
@@ -232,8 +245,8 @@ export default function PhaserGame() {
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump = this.controls.up?.isDown || this.jumpKey.isDown;
 
-            const speed = 400; // faster side movement
-            const jumpSpeed = -550; // slightly stronger jump
+            const speed = 500; // faster side movement
+            const jumpSpeed = -500; // slightly stronger jump
 
             if (moveLeft) {
               this.hero.setVelocityX(-speed);
