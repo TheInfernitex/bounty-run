@@ -62,7 +62,7 @@ export default function PhaserGame() {
             ); // hero sits on top
             this.hero.setScale(0.05);
             this.hero.setBounce(0.2);
-            this.hero.setCollideWorldBounds(true);
+            this.hero.setCollideWorldBounds(false);
             this.hero.setDragX(800); // smoother stop
             this.hero.body?.updateFromGameObject();
 
@@ -245,20 +245,27 @@ export default function PhaserGame() {
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump = this.controls.up?.isDown || this.jumpKey.isDown;
 
-            const speed = 450; // faster side movement
-            const jumpSpeed = -500; // slightly stronger jump
+            const speed = 450;
+            const jumpSpeed = -500;
 
             if (moveLeft) {
               this.hero.setVelocityX(-speed);
             } else if (moveRight) {
               this.hero.setVelocityX(speed);
             } else {
-              // Smooth deceleration
               this.hero.setVelocityX(0);
             }
 
             if (wantsToJump && isGrounded) {
               this.hero.setVelocityY(jumpSpeed);
+            }
+
+            // Screen wrapping logic
+            const { width } = this.scale;
+            if (this.hero.x < 0) {
+              this.hero.x = width;
+            } else if (this.hero.x > width) {
+              this.hero.x = 0;
             }
           }
         }
