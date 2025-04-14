@@ -18,6 +18,10 @@ export default function PhaserGame() {
           stars!: Phaser.Physics.Arcade.Group;
           bombs!: Phaser.Physics.Arcade.Group;
           gameOver = false;
+          starSpawnRate!: number;
+          bombSpawnRate!: number;
+          starTimer!: Phaser.Time.TimerEvent;
+          bombTimer!: Phaser.Time.TimerEvent;
 
           constructor() {
             super("skybound-journey");
@@ -119,6 +123,8 @@ export default function PhaserGame() {
               callback: this.spawnBomb,
               callbackScope: this,
             });
+            this.starSpawnRate = 1600; // Initial rate for spawning stars
+            this.bombSpawnRate = 4000; // Initial rate for spawning bombs
 
             // Display score
             this.scoreText = this.add.text(16, 16, "Score: 0", {
@@ -165,6 +171,43 @@ export default function PhaserGame() {
                 }
               },
             });
+
+            this.time.addEvent({
+              delay: 1000, // check every second
+              loop: true,
+              callback: this.scaleDifficulty,
+              callbackScope: this,
+            });
+          }
+          lastDifficultyScore = 0;
+
+          scaleDifficulty() {
+            const step = 100;
+            if (this.score >= this.lastDifficultyScore + step) {
+              this.lastDifficultyScore = this.score;
+
+              // Increase difficulty: spawn rate is actually spawn delay. so decrease to make it harder.
+              if (this.starSpawnRate > 600) this.starSpawnRate -= 200;
+              if (this.bombSpawnRate > 1000) this.bombSpawnRate -= 500;
+
+              // Reapply timers with new delays
+              this.starTimer?.remove(false);
+              this.bombTimer?.remove(false);
+
+              this.starTimer = this.time.addEvent({
+                delay: this.starSpawnRate,
+                loop: true,
+                callback: this.spawnStar,
+                callbackScope: this,
+              });
+
+              this.bombTimer = this.time.addEvent({
+                delay: this.bombSpawnRate,
+                loop: true,
+                callback: this.spawnBomb,
+                callbackScope: this,
+              });
+            }
           }
           spawnBomb() {
             if (this.gameOver) return;
