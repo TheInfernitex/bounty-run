@@ -182,13 +182,21 @@ export default function PhaserGame() {
           lastDifficultyScore = 0;
 
           scaleDifficulty() {
-            const step = 100;
-            if (this.score >= this.lastDifficultyScore + step) {
+            const difficultyThreshold = 100; // Increase difficulty for every 100 points
+            const difficultyIncreaseFactor = 0.05; // Reduce delay by 5% for each threshold reached
+
+            // Increase difficulty only after crossing the difficulty threshold
+            if (this.score >= this.lastDifficultyScore + difficultyThreshold) {
               this.lastDifficultyScore = this.score;
 
-              // Increase difficulty: spawn rate is actually spawn delay. so decrease to make it harder.
-              if (this.starSpawnRate > 600) this.starSpawnRate -= 200;
-              if (this.bombSpawnRate > 1000) this.bombSpawnRate -= 500;
+              // Gradually decrease the spawn rates (delays)
+              if (this.starSpawnRate > 600) {
+                this.starSpawnRate *= 1 - difficultyIncreaseFactor; // Reduce spawn rate by 5%
+              }
+
+              if (this.bombSpawnRate > 1000) {
+                this.bombSpawnRate *= 1 - difficultyIncreaseFactor; // Reduce spawn rate by 5%
+              }
 
               // Reapply timers with new delays
               this.starTimer?.remove(false);
