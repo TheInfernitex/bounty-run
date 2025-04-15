@@ -257,7 +257,7 @@ export default function PhaserGame() {
             this.add
               .text(width / 2, height / 2 - 50, "~ Game Over ~", {
                 fontSize: "48px",
-                color: "#ff000",
+                color: "#fff",
                 fontFamily: "Arial",
               })
               .setOrigin(0.5)
@@ -266,7 +266,7 @@ export default function PhaserGame() {
             this.add
               .text(width / 2, height / 2, `Score: ${this.score}`, {
                 fontSize: "35px",
-                color: "#ff000",
+                color: "#fff",
                 fontFamily: "Arial",
               })
               .setOrigin(0.5)
