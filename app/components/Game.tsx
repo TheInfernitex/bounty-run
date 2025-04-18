@@ -3,6 +3,17 @@
 import { useEffect } from "react";
 
 export default function PhaserGame() {
+  type CustomControls = {
+    up: Phaser.Input.Keyboard.Key;
+    down: Phaser.Input.Keyboard.Key;
+    left: Phaser.Input.Keyboard.Key;
+    right: Phaser.Input.Keyboard.Key;
+    W: Phaser.Input.Keyboard.Key;
+    A: Phaser.Input.Keyboard.Key;
+    S: Phaser.Input.Keyboard.Key;
+    D: Phaser.Input.Keyboard.Key;
+  };
+
   useEffect(() => {
     const startEpicAdventure = async () => {
       if (typeof window !== "undefined") {
@@ -11,7 +22,6 @@ export default function PhaserGame() {
         class SkyboundJourney extends Phaser.Scene {
           hero!: Phaser.Physics.Arcade.Sprite;
           terrain!: Phaser.Physics.Arcade.StaticGroup;
-          controls!: Phaser.Types.Input.Keyboard.CursorKeys;
           jumpKey!: Phaser.Input.Keyboard.Key;
           score = 0;
           scoreText!: Phaser.GameObjects.Text;
@@ -22,6 +32,7 @@ export default function PhaserGame() {
           bombSpawnRate!: number;
           starTimer!: Phaser.Time.TimerEvent;
           bombTimer!: Phaser.Time.TimerEvent;
+          controls!: CustomControls;
 
           constructor() {
             super("skybound-journey");
@@ -73,8 +84,18 @@ export default function PhaserGame() {
             this.physics.add.collider(this.hero, this.terrain);
 
             // Prepare for control
-            this.controls = this.input.keyboard!.createCursorKeys();
-            this.jumpKey = this.input.keyboard!.addKey(
+            this.controls = this.input!.keyboard!.addKeys({
+              up: Phaser.Input.Keyboard.KeyCodes.UP,
+              down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+              left: Phaser.Input.Keyboard.KeyCodes.LEFT,
+              right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+              W: Phaser.Input.Keyboard.KeyCodes.W,
+              A: Phaser.Input.Keyboard.KeyCodes.A,
+              S: Phaser.Input.Keyboard.KeyCodes.S,
+              D: Phaser.Input.Keyboard.KeyCodes.D,
+            }) as CustomControls;
+
+            this.jumpKey = this.input!.keyboard!.addKey(
               Phaser.Input.Keyboard.KeyCodes.SPACE,
             );
 
@@ -291,10 +312,15 @@ export default function PhaserGame() {
           }
 
           update() {
-            const moveLeft = this.controls.left?.isDown;
-            const moveRight = this.controls.right?.isDown;
+            const moveLeft =
+              this.controls.left?.isDown || this.controls.A?.isDown;
+            const moveRight =
+              this.controls.right?.isDown || this.controls.D?.isDown;
             const isGrounded = this.hero.body?.touching.down;
-            const wantsToJump = this.controls.up?.isDown || this.jumpKey.isDown;
+            const wantsToJump =
+              this.controls.up?.isDown ||
+              this.controls.W?.isDown ||
+              this.jumpKey?.isDown;
 
             const speed = 450;
             const jumpSpeed = -500;
