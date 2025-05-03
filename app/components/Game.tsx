@@ -34,6 +34,10 @@ export default function PhaserGame() {
           bombTimer!: Phaser.Time.TimerEvent;
           controls!: CustomControls;
 
+          // Add text objects for initial instructions
+          controlsText!: Phaser.GameObjects.Text;
+          objectiveText!: Phaser.GameObjects.Text;
+
           constructor() {
             super("skybound-journey");
           }
@@ -154,6 +158,55 @@ export default function PhaserGame() {
               fontFamily: "Arial",
             });
             this.scoreText.setScrollFactor(0);
+
+            // **Add initial controls and objective text**
+            this.controlsText = this.add
+              .text(
+                width / 2,
+                height / 2 - 80,
+                "Use arrow keys to move and spacebar to jump.",
+                {
+                  fontSize: "24px",
+                  color: "#ffffff",
+                  fontFamily: "Arial",
+                  align: "center",
+                },
+              )
+              .setOrigin(0.5)
+              .setScrollFactor(0);
+
+            this.objectiveText = this.add
+              .text(
+                width / 2,
+                height / 2 - 40,
+                "Collect stars and avoid bombs as long as possible.\nIt gets harder the more points you get.",
+                {
+                  fontSize: "24px",
+                  color: "#ffffff",
+                  fontFamily: "Arial",
+                  align: "center",
+                },
+              )
+              .setOrigin(0.5)
+              .setScrollFactor(0);
+
+            // **Set a timer to remove the text after 5 seconds**
+            this.time.delayedCall(
+              5000,
+              () => {
+                this.controlsText.destroy();
+                this.objectiveText.destroy();
+              },
+              [],
+              this,
+            );
+
+            this.time.addEvent({
+              delay: 1000, // check every second
+              loop: true,
+              callback: this.scaleDifficulty,
+              callbackScope: this,
+            });
           }
           spawnStar() {
             if (this.gameOver) return;
@@ -191,13 +244,6 @@ export default function PhaserGame() {
                   star.destroy();
                 }
               },
-            });
-
-            this.time.addEvent({
-              delay: 1000, // check every second
-              loop: true,
-              callback: this.scaleDifficulty,
-              callbackScope: this,
             });
           }
           lastDifficultyScore = 0;
