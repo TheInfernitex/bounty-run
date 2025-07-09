@@ -27,12 +27,20 @@ export default function PhaserGame() {
           scoreText!: Phaser.GameObjects.Text;
           stars!: Phaser.Physics.Arcade.Group;
           bombs!: Phaser.Physics.Arcade.Group;
+          magicStars!: Phaser.Physics.Arcade.Group;
           gameOver = false;
           starSpawnRate!: number;
           bombSpawnRate!: number;
           starTimer!: Phaser.Time.TimerEvent;
           bombTimer!: Phaser.Time.TimerEvent;
           controls!: CustomControls;
+          lastMagicStarScore = 0;
+          magicStarText!: Phaser.GameObjects.Text;
+
+          // UI elements
+          uiContainer!: Phaser.GameObjects.Container;
+          livesText!: Phaser.GameObjects.Text;
+          nextMagicStarText!: Phaser.GameObjects.Text;
 
           // Add text objects for initial instructions
           controlsText!: Phaser.GameObjects.Text;
@@ -57,32 +65,33 @@ export default function PhaserGame() {
             this.add
               .image(width / 2, height / 2, "sky")
               .setDisplaySize(width, height);
+
             // Lay the foundation
             this.terrain = this.physics.add.staticGroup();
             const platform = this.terrain
-              .create(width / 2, height, "ground") // bottom center
+              .create(width / 2, height, "ground")
               .setOrigin(0.5, 1);
 
             const platformWidth = platform.width;
             const platformHeight = platform.height;
 
             const scaleX = width / platformWidth;
-            const desiredHeight = 100; // height of the "land"
+            const desiredHeight = 100;
             const scaleY = desiredHeight / platformHeight;
 
             platform.setScale(scaleX, scaleY).refreshBody();
 
             // Summon the hero
-            const platformTopY = height - desiredHeight; // top of the platform
+            const platformTopY = height - desiredHeight;
             this.hero = this.physics.add.sprite(
               100,
               platformTopY - 100,
               "hero",
-            ); // hero sits on top
+            );
             this.hero.setScale(0.05);
             this.hero.setBounce(0.2);
             this.hero.setCollideWorldBounds(false);
-            this.hero.setDragX(800); // smoother stop
+            this.hero.setDragX(800);
             this.hero.body?.updateFromGameObject();
 
             this.physics.add.collider(this.hero, this.terrain);
@@ -103,8 +112,10 @@ export default function PhaserGame() {
               Phaser.Input.Keyboard.KeyCodes.SPACE,
             );
 
-            // Create an empty group for stars
+            // Create groups
             this.stars = this.physics.add.group();
+            this.bombs = this.physics.add.group();
+            this.magicStars = this.physics.add.group();
 
             // Drop stars repeatedly
             this.time.addEvent({
@@ -117,7 +128,6 @@ export default function PhaserGame() {
             this.stars.children.iterate((child) => {
               const star = child as Phaser.Physics.Arcade.Image;
               star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.6));
-
               star.setScale(0.1);
               star.body?.updateFromGameObject();
               return true;
@@ -125,6 +135,7 @@ export default function PhaserGame() {
 
             // Add collision with terrain
             this.physics.add.collider(this.stars, this.terrain);
+            this.physics.add.collider(this.magicStars, this.terrain);
 
             // Add overlap with hero
             this.physics.add.overlap(
@@ -133,13 +144,30 @@ export default function PhaserGame() {
               (hero, star) => {
                 (star as Phaser.Physics.Arcade.Image).disableBody(true, true);
                 this.score += 10;
-                this.scoreText.setText("Score: " + this.score);
+                this.updateUI();
+                this.checkMagicStar();
               },
               undefined,
               this,
             );
-            // Create an empty group for bombs
-            this.bombs = this.physics.add.group();
+
+            // Magic star overlap
+            this.physics.add.overlap(
+              this.hero,
+              this.magicStars,
+              (hero, magicStar) => {
+                (magicStar as Phaser.Physics.Arcade.Image).disableBody(
+                  true,
+                  true,
+                );
+                this.score += 50;
+                this.clearAllBombs();
+                this.showMagicStarEffect();
+                this.updateUI();
+              },
+              undefined,
+              this,
+            );
 
             // Drop bombs randomly
             this.time.addEvent({
@@ -148,28 +176,26 @@ export default function PhaserGame() {
               callback: this.spawnBomb,
               callbackScope: this,
             });
-            this.starSpawnRate = 1600; // Initial rate for spawning stars
-            this.bombSpawnRate = 4000; // Initial rate for spawning bombs
 
-            // Display score
-            this.scoreText = this.add.text(16, 16, "Score: 0", {
-              fontSize: "32px",
-              color: "#fff",
-              fontFamily: "Arial",
-            });
-            this.scoreText.setScrollFactor(0);
+            this.starSpawnRate = 1600;
+            this.bombSpawnRate = 4000;
 
-            // **Add initial controls and objective text**
+            // Create enhanced UI
+            this.createUI();
+
+            // Add initial controls and objective text
             this.controlsText = this.add
               .text(
                 width / 2,
-                height / 2 - 80,
-                "Use arrow keys to move and spacebar to jump.",
+                height / 2 - 120,
+                "🎮 CONTROLS 🎮\nArrow Keys / WASD: Move\nSpacebar: Jump\nDown Key: Rush to Platform",
                 {
-                  fontSize: "24px",
+                  fontSize: "20px",
                   color: "#ffffff",
                   fontFamily: "Arial",
                   align: "center",
+                  stroke: "#000000",
+                  strokeThickness: 2,
                 },
               )
               .setOrigin(0.5)
@@ -178,21 +204,23 @@ export default function PhaserGame() {
             this.objectiveText = this.add
               .text(
                 width / 2,
-                height / 2 - 40,
-                "Collect stars and avoid bombs as long as possible.\nIt gets harder the more points you get.",
+                height / 2 - 20,
+                "✨ OBJECTIVE ✨\nCollect stars (+10 pts) and avoid bombs!\n⭐ Magic Stars appear every 200 pts and destroy all bombs! ⭐\nDifficulty increases with score!",
                 {
-                  fontSize: "24px",
+                  fontSize: "18px",
                   color: "#ffffff",
                   fontFamily: "Arial",
                   align: "center",
+                  stroke: "#000000",
+                  strokeThickness: 2,
                 },
               )
               .setOrigin(0.5)
               .setScrollFactor(0);
 
-            // **Set a timer to remove the text after 5 seconds**
+            // Set a timer to remove the text after 6 seconds
             this.time.delayedCall(
-              5000,
+              6000,
               () => {
                 this.controlsText.destroy();
                 this.objectiveText.destroy();
@@ -202,12 +230,162 @@ export default function PhaserGame() {
             );
 
             this.time.addEvent({
-              delay: 1000, // check every second
+              delay: 1000,
               loop: true,
               callback: this.scaleDifficulty,
               callbackScope: this,
             });
           }
+
+          createUI() {
+            const { width } = this.scale;
+
+            // Create UI container
+            this.uiContainer = this.add.container(0, 0);
+
+            // Enhanced score display
+            this.scoreText = this.add.text(20, 20, "Score: 0", {
+              fontSize: "28px",
+              color: "#ffffff",
+              fontFamily: "Arial",
+              stroke: "#000000",
+              strokeThickness: 3,
+            });
+
+            // Next magic star indicator
+            this.nextMagicStarText = this.add.text(
+              20,
+              60,
+              "⭐ Magic Star: 200 pts",
+              {
+                fontSize: "20px",
+                color: "#ffdf00",
+                fontFamily: "Arial",
+                stroke: "#000000",
+                strokeThickness: 2,
+              },
+            );
+
+            // Add pulsing effect to magic star text
+            this.tweens.add({
+              targets: this.nextMagicStarText,
+              alpha: 0.5,
+              duration: 1000,
+              yoyo: true,
+              repeat: -1,
+            });
+
+            this.uiContainer.add([this.scoreText, this.nextMagicStarText]);
+            this.uiContainer.setScrollFactor(0);
+          }
+
+          updateUI() {
+            this.scoreText.setText(`Score: ${this.score}`);
+            const nextMagicAt = Math.ceil((this.score + 1) / 200) * 200;
+            this.nextMagicStarText.setText(`⭐ Magic Star: ${nextMagicAt} pts`);
+          }
+
+          checkMagicStar() {
+            const currentMagicStarMilestone = Math.floor(this.score / 200);
+            const lastMagicStarMilestone = Math.floor(
+              this.lastMagicStarScore / 200,
+            );
+
+            if (currentMagicStarMilestone > lastMagicStarMilestone) {
+              this.spawnMagicStar();
+              this.lastMagicStarScore = this.score;
+            }
+          }
+
+          spawnMagicStar() {
+            const x = Phaser.Math.Between(50, this.scale.width - 50);
+            const magicStar = this.magicStars.create(
+              x,
+              0,
+              "star",
+            ) as Phaser.Physics.Arcade.Image;
+
+            magicStar.setBounceY(0.8);
+            magicStar.setCollideWorldBounds(true);
+            magicStar.setScale(0.15);
+            magicStar.setTint(0xffdf00);
+            magicStar.body?.updateFromGameObject();
+
+            // Add glowing effect
+            this.tweens.add({
+              targets: magicStar,
+              scaleX: 0.18,
+              scaleY: 0.18,
+              duration: 500,
+              yoyo: true,
+              repeat: -1,
+            });
+
+            // Add sparkle effect
+            this.tweens.add({
+              targets: magicStar,
+              alpha: 0.7,
+              duration: 300,
+              yoyo: true,
+              repeat: -1,
+            });
+
+            // Auto-destroy after 8 seconds
+            this.time.delayedCall(8000, () => {
+              if (magicStar.active) {
+                magicStar.destroy();
+              }
+            });
+          }
+
+          clearAllBombs() {
+            this.bombs.children.entries.forEach((bomb) => {
+              if (bomb.active) {
+                // Add explosion effect
+                this.tweens.add({
+                  targets: bomb,
+                  scaleX: 0.2,
+                  scaleY: 0.2,
+                  alpha: 0,
+                  duration: 200,
+                  onComplete: () => {
+                    (bomb as Phaser.Physics.Arcade.Image).destroy();
+                  },
+                });
+              }
+            });
+          }
+
+          showMagicStarEffect() {
+            const { width, height } = this.scale;
+            const effectText = this.add
+              .text(
+                width / 2,
+                height / 2,
+                "✨ MAGIC STAR! ✨\nAll bombs destroyed!",
+                {
+                  fontSize: "32px",
+                  color: "#ffdf00",
+                  fontFamily: "Arial",
+                  align: "center",
+                  stroke: "#000000",
+                  strokeThickness: 3,
+                },
+              )
+              .setOrigin(0.5)
+              .setScrollFactor(0);
+
+            this.tweens.add({
+              targets: effectText,
+              alpha: 0,
+              y: height / 2 - 50,
+              duration: 3000,
+              onComplete: () => {
+                effectText.destroy();
+              },
+            });
+          }
+
           spawnStar() {
             if (this.gameOver) return;
 
@@ -223,17 +401,15 @@ export default function PhaserGame() {
             star.setScale(0.1);
             star.body?.updateFromGameObject();
 
-            // Collide with ground
             this.physics.add.collider(star, this.terrain);
 
-            // Overlap with hero
             this.physics.add.overlap(this.hero, star, (hero, star) => {
               (star as Phaser.Physics.Arcade.Image).disableBody(true, true);
               this.score += 10;
-              this.scoreText.setText("Score: " + this.score);
+              this.updateUI();
+              this.checkMagicStar();
             });
 
-            // Fade out and destroy after 4 seconds
             this.tweens.add({
               targets: star,
               alpha: 0,
@@ -246,26 +422,24 @@ export default function PhaserGame() {
               },
             });
           }
+
           lastDifficultyScore = 0;
 
           scaleDifficulty() {
-            const difficultyThreshold = 100; // Increase difficulty for every 100 points
-            const difficultyIncreaseFactor = 0.05; // Reduce delay by 5% for each threshold reached
+            const difficultyThreshold = 100;
+            const difficultyIncreaseFactor = 0.05;
 
-            // Increase difficulty only after crossing the difficulty threshold
             if (this.score >= this.lastDifficultyScore + difficultyThreshold) {
               this.lastDifficultyScore = this.score;
 
-              // Gradually decrease the spawn rates (delays)
               if (this.starSpawnRate > 600) {
-                this.starSpawnRate *= 1 - difficultyIncreaseFactor; // Reduce spawn rate by 5%
+                this.starSpawnRate *= 1 - difficultyIncreaseFactor;
               }
 
               if (this.bombSpawnRate > 1000) {
-                this.bombSpawnRate *= 1 - difficultyIncreaseFactor; // Reduce spawn rate by 5%
+                this.bombSpawnRate *= 1 - difficultyIncreaseFactor;
               }
 
-              // Reapply timers with new delays
               this.starTimer?.remove(false);
               this.bombTimer?.remove(false);
 
@@ -284,6 +458,7 @@ export default function PhaserGame() {
               });
             }
           }
+
           spawnBomb() {
             if (this.gameOver) return;
 
@@ -297,13 +472,11 @@ export default function PhaserGame() {
             bomb.setBounce(1);
             bomb.setCollideWorldBounds(true);
             bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-            bomb.setScale(0.06); // smaller size
+            bomb.setScale(0.06);
             bomb.body?.updateFromGameObject();
 
-            // Collide with terrain
             this.physics.add.collider(bomb, this.terrain);
 
-            // Check collision with player
             this.physics.add.collider(
               this.hero,
               bomb,
@@ -312,6 +485,7 @@ export default function PhaserGame() {
               this,
             );
           }
+
           handleGameOver() {
             if (this.gameOver) return;
             this.gameOver = true;
@@ -321,36 +495,60 @@ export default function PhaserGame() {
             this.hero.anims?.stop?.();
 
             const { width, height } = this.scale;
+
+            // Game over background
+            const gameOverBg = this.add.rectangle(
+              width / 2,
+              height / 2,
+              width,
+              height,
+              0x000000,
+              0.8,
+            );
+            gameOverBg.setScrollFactor(0);
+
             this.add
-              .text(width / 2, height / 2 - 50, "~ Game Over ~", {
+              .text(width / 2, height / 2 - 80, "GAME OVER!", {
                 fontSize: "48px",
-                color: "#fff",
+                color: "#ff6b6b",
                 fontFamily: "Arial",
+                stroke: "#000000",
+                strokeThickness: 4,
               })
               .setOrigin(0.5)
               .setScrollFactor(0);
 
             this.add
-              .text(width / 2, height / 2, `Score: ${this.score}`, {
-                fontSize: "35px",
-                color: "#fff",
+              .text(width / 2, height / 2 - 20, `Final Score: ${this.score}`, {
+                fontSize: "32px",
+                color: "#ffffff",
                 fontFamily: "Arial",
+                stroke: "#000000",
+                strokeThickness: 3,
               })
               .setOrigin(0.5)
               .setScrollFactor(0);
 
             const restartBtn = this.add
-              .text(width / 2, height / 2 + 80, "Play Again", {
+              .text(width / 2, height / 2 + 60, "🔄 PLAY AGAIN", {
                 fontSize: "28px",
                 color: "#ffffff",
-                backgroundColor: "#444",
-                padding: { x: 20, y: 10 },
+                backgroundColor: "#131a29",
+                padding: { x: 30, y: 15 },
                 fontFamily: "Arial",
               })
               .setOrigin(0.5)
               .setInteractive({ useHandCursor: true })
-              // makes it clickable
               .setScrollFactor(0);
+
+            // Add hover effect
+            restartBtn.on("pointerover", () => {
+              restartBtn.setScale(1.1);
+            });
+
+            restartBtn.on("pointerout", () => {
+              restartBtn.setScale(1);
+            });
 
             restartBtn.on("pointerdown", () => {
               window.location.reload();
@@ -362,6 +560,8 @@ export default function PhaserGame() {
               this.controls.left?.isDown || this.controls.A?.isDown;
             const moveRight =
               this.controls.right?.isDown || this.controls.D?.isDown;
+            const rushDown =
+              this.controls.down?.isDown || this.controls.S?.isDown;
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump =
               this.controls.up?.isDown ||
@@ -370,6 +570,7 @@ export default function PhaserGame() {
 
             const speed = 450;
             const jumpSpeed = -500;
+            const rushSpeed = 400; // Speed for rushing down
 
             if (moveLeft) {
               this.hero.setVelocityX(-speed);
@@ -383,6 +584,11 @@ export default function PhaserGame() {
               this.hero.setVelocityY(jumpSpeed);
             }
 
+            // Rush down to platform
+            if (rushDown && !isGrounded) {
+              this.hero.setVelocityY(rushSpeed);
+            }
+
             // Screen wrapping logic
             const { width } = this.scale;
             if (this.hero.x < 0) {
@@ -392,6 +598,7 @@ export default function PhaserGame() {
             }
           }
         }
+
         const config: Phaser.Types.Core.GameConfig = {
           type: Phaser.AUTO,
           width: window.innerWidth,
