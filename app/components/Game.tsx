@@ -23,19 +23,20 @@ export default function PhaserGame() {
           hero!: Phaser.Physics.Arcade.Sprite;
           terrain!: Phaser.Physics.Arcade.StaticGroup;
           jumpKey!: Phaser.Input.Keyboard.Key;
-          score = 0;
+          score!: number;
           scoreText!: Phaser.GameObjects.Text;
           stars!: Phaser.Physics.Arcade.Group;
           bombs!: Phaser.Physics.Arcade.Group;
           magicStars!: Phaser.Physics.Arcade.Group;
-          gameOver = false;
+          gameOver!: boolean;
           starSpawnRate!: number;
           bombSpawnRate!: number;
           starTimer!: Phaser.Time.TimerEvent;
           bombTimer!: Phaser.Time.TimerEvent;
           controls!: CustomControls;
-          lastMagicStarScore = 0;
+          lastMagicStarScore!: number;
           magicStarText!: Phaser.GameObjects.Text;
+          lastDifficultyScore!: number;
 
           // UI elements
           uiContainer!: Phaser.GameObjects.Container;
@@ -48,6 +49,16 @@ export default function PhaserGame() {
 
           constructor() {
             super("skybound-journey");
+          }
+
+          init() {
+            // Reset all game parameters here
+            this.score = 0;
+            this.gameOver = false;
+            this.starSpawnRate = 1600;
+            this.bombSpawnRate = 4000;
+            this.lastMagicStarScore = 0;
+            this.lastDifficultyScore = 0;
           }
 
           preload() {
@@ -177,9 +188,6 @@ export default function PhaserGame() {
               callbackScope: this,
             });
 
-            this.starSpawnRate = 1600;
-            this.bombSpawnRate = 4000;
-
             // Create enhanced UI
             this.createUI();
 
@@ -238,8 +246,6 @@ export default function PhaserGame() {
           }
 
           createUI() {
-            const { width } = this.scale;
-
             // Create UI container
             this.uiContainer = this.add.container(0, 0);
 
@@ -423,8 +429,6 @@ export default function PhaserGame() {
             });
           }
 
-          lastDifficultyScore = 0;
-
           scaleDifficulty() {
             const difficultyThreshold = 100;
             const difficultyIncreaseFactor = 0.05;
@@ -541,7 +545,6 @@ export default function PhaserGame() {
               .setInteractive({ useHandCursor: true })
               .setScrollFactor(0);
 
-            // Add hover effect
             restartBtn.on("pointerover", () => {
               restartBtn.setScale(1.1);
             });
@@ -551,11 +554,14 @@ export default function PhaserGame() {
             });
 
             restartBtn.on("pointerdown", () => {
-              window.location.reload();
+              // This will reset the scene's state and call create() again
+              this.scene.restart();
             });
           }
 
           update() {
+            if (this.gameOver) return;
+
             const moveLeft =
               this.controls.left?.isDown || this.controls.A?.isDown;
             const moveRight =
