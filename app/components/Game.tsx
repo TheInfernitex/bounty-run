@@ -575,7 +575,7 @@ export default function PhaserGame() {
             const moveRight =
               this.controls.right?.isDown || this.controls.D?.isDown || this.controls.L?.isDown;
             const rushDown =
-              this.controls.down?.isDown || this.controls.s?.isdown || this.controls.J?.isDown;
+              this.controls.down?.isDown || this.controls.S?.isdown || this.controls.J?.isDown;
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump =
               this.controls.up?.isDown ||
