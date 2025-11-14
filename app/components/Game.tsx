@@ -12,6 +12,10 @@ export default function PhaserGame() {
     A: Phaser.Input.Keyboard.Key;
     S: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
+    H: Phaser.Input.Keyboard.Key;
+    J: Phaser.Input.Keyboard.Key;
+    K: Phaser.Input.Keyboard.Key;
+    L: Phaser.Input.Keyboard.Key;
   };
 
   useEffect(() => {
@@ -117,6 +121,10 @@ export default function PhaserGame() {
               A: Phaser.Input.Keyboard.KeyCodes.A,
               S: Phaser.Input.Keyboard.KeyCodes.S,
               D: Phaser.Input.Keyboard.KeyCodes.D,
+              H: Phaser.Input.Keyboard.KeyCodes.H,
+              J: Phaser.Input.Keyboard.KeyCodes.J,
+              K: Phaser.Input.Keyboard.KeyCodes.K,
+              L: Phaser.Input.Keyboard.KeyCodes.L,
             }) as CustomControls;
 
             this.jumpKey = this.input!.keyboard!.addKey(
@@ -563,15 +571,16 @@ export default function PhaserGame() {
             if (this.gameOver) return;
 
             const moveLeft =
-              this.controls.left?.isDown || this.controls.A?.isDown;
+              this.controls.left?.isDown || this.controls.A?.isDown || this.controls.H?.isDown;
             const moveRight =
-              this.controls.right?.isDown || this.controls.D?.isDown;
+              this.controls.right?.isDown || this.controls.D?.isDown || this.controls.L?.isDown;
             const rushDown =
-              this.controls.down?.isDown || this.controls.S?.isDown;
+              this.controls.down?.isDown || this.controls.s?.isdown || this.controls.J?.isDown;
             const isGrounded = this.hero.body?.touching.down;
             const wantsToJump =
               this.controls.up?.isDown ||
               this.controls.W?.isDown ||
+              this.controls.K?.isDown ||
               this.jumpKey?.isDown;
 
             const speed = 450;
